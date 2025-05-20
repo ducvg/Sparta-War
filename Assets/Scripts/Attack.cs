@@ -1,61 +1,121 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using Unity.Mathematics;
+using DG.Tweening;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(LineRenderer))]
 public class Attack : MonoBehaviour
 {
-    [SerializeField] private GameObject attackPrefab;
-    [SerializeField] private LineRenderer lineRenderer;
-    [SerializeField] private LayerMask reflectLayer;
-    [SerializeField] private List<Transform> pathSequence = new();
+    public GameObject attackPrefab;
+    public float attackSpeed = 1f;
+    public int maxReflections = 20;
+    public float maxDistance = 100f;
+    public LayerMask hitLayerMask;
+    [SerializeField] private PhysicsRaycaster physicsRaycaster;
+    [SerializeField] private GameObject attackButton;
+    [SerializeField] private List<Vector3> targetList;
 
-    void Awake()
+    private Queue<Vector3> targetQueue;
+    private LineRenderer lineRenderer;
+    private bool isAttacking = false;
+
+    void Start()
     {
-        if (!lineRenderer)
-        {
-            lineRenderer = GetComponent<LineRenderer>();
-        }
 
-
+        lineRenderer = GetComponent<LineRenderer>();
     }
 
-    private void Update()
+    void Update()
     {
-        Vector2 origin = transform.position;
-        DrawLaser(origin, Vector3.forward);
+        CastLaser();
     }
 
 
-    void DrawLaser(Vector2 origin, Vector2 direction)
+    void CastLaser()
     {
-        Vector2 currentOrigin = origin;
-        Vector2 currentDirection = direction;
+        Vector3 origin = transform.position + new Vector3(0, 0.5f, 0); // avoid ground
+        Vector3 direction = transform.forward;
+        List<Vector3> points = new List<Vector3> { origin };
+        targetList.Clear();
+        bool bossHit = false;
 
-
-        if (Physics.Raycast(currentOrigin, currentDirection, out RaycastHit hitInfo, 200f))
+        for (int i = 0; i < maxReflections; i++)
         {
-            lineRenderer.positionCount++;
-            lineRenderer.SetPosition(lineRenderer.positionCount - 1, hitInfo.point);
-            if (hitInfo.collider.CompareTag("Reflector"))
+            if (Physics.Raycast(origin, direction, out RaycastHit hit, maxDistance, hitLayerMask))
             {
-                var reflection = Vector3.Reflect(currentDirection, hitInfo.normal);
-                DrawLaser(currentOrigin, reflection);
+                origin = hit.point;
+                points.Add(hit.point);
+
+                if (hit.collider.CompareTag("Boss"))
+                {
+                    targetList.Add(hit.point);
+                    bossHit = true;
+                    attackButton.SetActive(!isAttacking);
+                    targetQueue = new Queue<Vector3>(targetList);
+
+                    break;
+                }
+                else if (hit.collider.CompareTag("Shield"))
+                {
+                    targetList.Add(hit.point);
+                    Debug.DrawRay(hit.point, hit.normal, Color.blue, 1f);
+                    direction = Vector3.Reflect(direction, hit.normal).normalized;
+
+                }
+                else
+                {
+                    break;
+                }
+            }
+            else
+            {
+                points.Add(origin + direction.normalized * maxDistance);
+                break;
             }
         }
-        else
+
+
+        if (!bossHit)
         {
-            lineRenderer.positionCount++;
-            lineRenderer.SetPosition(lineRenderer.positionCount - 1, currentOrigin + currentDirection * 200f);
+            attackButton.SetActive(false);
+
         }
-        
+
+        lineRenderer.positionCount = points.Count;
+        lineRenderer.SetPositions(points.ToArray());
     }
 
-    private void SpawnAttack()
+    public void AttackBoss()
     {
-        var spear = Instantiate(attackPrefab, transform.position, quaternion.identity);
+        GameObject attack = Instantiate(attackPrefab, transform.position, Quaternion.identity);
+
+        Vector3[] targetArray = targetList.ToArray();
+
+        attack.transform.DOPath(targetArray, attackSpeed, PathType.Linear, PathMode.Full3D)
+        .SetEase(Ease.Linear)
+        .OnStart(() =>
+        {
+            physicsRaycaster.enabled = false;
+
+            isAttacking = true;
+            lineRenderer.enabled = false;
+            attackButton.SetActive(false);
+        })
+        .OnWaypointChange((waypointIndex) =>
+        {
+            if (waypointIndex < targetList.Count)
+            {
+                attack.transform.LookAt(targetList[waypointIndex]);
+            }
+        })
+        .OnComplete(() =>
+        {
+            physicsRaycaster.enabled = true;
+
+            isAttacking = false;
+            lineRenderer.enabled = true;
+        });
     }
-
-
 }
