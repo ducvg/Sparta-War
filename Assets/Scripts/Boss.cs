@@ -8,6 +8,7 @@ public class Boss : MonoBehaviour
     [SerializeField] private ParticleSystem hitParticle;
 
     [SerializeField] private Collider bossCollider;
+    [SerializeField] private AudioSource audioSource;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Awake()
@@ -20,8 +21,9 @@ public class Boss : MonoBehaviour
         {
             hitParticle = GetComponentInChildren<ParticleSystem>();
         }
-
+        if(!audioSource) audioSource = GetComponent<AudioSource>();
         GameManager.Instance.bosses.Add(this);
+        onDie.AddListener(_ => GameManager.Instance.OnBossDie(this));
         bossCollider = GetComponent<Collider>();
     }
 
@@ -33,22 +35,13 @@ public class Boss : MonoBehaviour
 
         transform.rotation = other.transform.rotation;
 
-        Destroy(other.gameObject);
+        // Destroy(other.gameObject);
         bossCollider.enabled = false;
-
+        
+        audioSource.Play();
         hitParticle.Play();
         animator.SetTrigger(dieAniamtion);
         onDie?.Invoke(this);
     }
 
-    void OnCollisionEnter(Collision collision)
-    {
-        Debug.Log("Collision Boss");
-        Destroy(collision.gameObject);
-        bossCollider.enabled = false;
-
-        hitParticle.Play();
-        animator.SetTrigger(dieAniamtion);
-        onDie?.Invoke(this);
-    }
 }

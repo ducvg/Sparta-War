@@ -1,0 +1,10 @@
+# ninja log v5
+30	4578	7695285995061813	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	987a319f60281264
+40	4593	7695285995061813	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	3bdb80d34e1def21
+65	4596	7695285995157856	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	aee423424d2b12ce
+21	4599	7695285995182998	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	a25a20c686c763e2
+12	4629	7695285996124608	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	6876cef1e8bce1d0
+78	4931	7695285999190303	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	a32bd68144b79c3f
+53	4958	7695285999440520	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	ee04705e15826a82
+1	5097	7695286000877479	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	e89292f4518df77a
+5097	5239	7695286002350005	D:/Unity/Sparta-War/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1h4w503w/obj/arm64-v8a/libgame.so	708c4397463d22a1

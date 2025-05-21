@@ -16,6 +16,10 @@ public class SliderSprite : MonoBehaviour
     {
         if (!slider) slider = GetComponent<Slider>(); ;
 
+        slider.onValueChanged.AddListener(UpdateSprite);
+        slider.wholeNumbers = true;
+        slider.minValue = 0;
+        slider.maxValue = sprites.Count-1;
     }
 
     void Start()
@@ -23,12 +27,12 @@ public class SliderSprite : MonoBehaviour
         slider.onValueChanged.AddListener(UpdateSprite);
         slider.wholeNumbers = true;
         slider.minValue = 0;
-        slider.maxValue = sprites.Count;
+        slider.maxValue = sprites.Count-1;
     }
 
     private void UpdateSprite(float arg0)
     {
-        Mathf.Clamp(arg0, 0, sprites.Count - 1);
-        backgroundImage.sprite = sprites[(int)arg0];
+        int index = Mathf.Clamp((int)arg0, 0, sprites.Count - 1);
+        backgroundImage.sprite = sprites[index];
     }
 }

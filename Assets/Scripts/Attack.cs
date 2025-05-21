@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(LineRenderer))]
@@ -13,21 +14,23 @@ public class Attack : MonoBehaviour
     public int maxReflections = 20;
     public float maxDistance = 100f;
     public LayerMask hitLayerMask;
+    public UnityEvent<bool> attackEvent;
     [SerializeField] private PhysicsRaycaster physicsRaycaster;
-    [SerializeField] private GameObject attackButton;
     [SerializeField] private List<Vector3> targetList;
 
     private Queue<Vector3> targetQueue;
     private LineRenderer lineRenderer;
+    private AudioSource audioSource;
     private bool isAttacking = false;
 
-    void Start()
+    void Awake()
     {
-
+        if (!physicsRaycaster) physicsRaycaster = Camera.main.GetComponent<PhysicsRaycaster>();
         lineRenderer = GetComponent<LineRenderer>();
+        audioSource = GetComponent<AudioSource>();
     }
 
-    void Update()
+    void LateUpdate()
     {
         CastLaser();
     }
@@ -35,7 +38,7 @@ public class Attack : MonoBehaviour
 
     void CastLaser()
     {
-        Vector3 origin = transform.position + new Vector3(0, 0.5f, 0); // avoid ground
+        Vector3 origin = transform.position + new Vector3(0, 0.3f, 0); // avoid ground
         Vector3 direction = transform.forward;
         List<Vector3> points = new List<Vector3> { origin };
         targetList.Clear();
@@ -52,7 +55,8 @@ public class Attack : MonoBehaviour
                 {
                     targetList.Add(hit.point);
                     bossHit = true;
-                    attackButton.SetActive(!isAttacking);
+                    attackEvent?.Invoke(!isAttacking);
+                    // UIManager.instance.ToggleAttackBtn(!isAttacking);
                     targetQueue = new Queue<Vector3>(targetList);
 
                     break;
@@ -79,7 +83,8 @@ public class Attack : MonoBehaviour
 
         if (!bossHit)
         {
-            attackButton.SetActive(false);
+            attackEvent?.Invoke(false);
+            // UIManager.instance.ToggleAttackBtn(false);
 
         }
 
@@ -89,19 +94,22 @@ public class Attack : MonoBehaviour
 
     public void AttackBoss()
     {
+        if (isAttacking) return;
         GameObject attack = Instantiate(attackPrefab, transform.position, Quaternion.identity);
 
         Vector3[] targetArray = targetList.ToArray();
 
         attack.transform.DOPath(targetArray, attackSpeed, PathType.Linear, PathMode.Full3D)
-        .SetEase(Ease.Linear)
+        // .SetEase(Ease.Linear)
         .OnStart(() =>
         {
+            audioSource.Play();
             physicsRaycaster.enabled = false;
 
             isAttacking = true;
             lineRenderer.enabled = false;
-            attackButton.SetActive(false);
+            attackEvent?.Invoke(false);
+            // UIManager.instance.ToggleAttackBtn(false);
         })
         .OnWaypointChange((waypointIndex) =>
         {
@@ -113,7 +121,7 @@ public class Attack : MonoBehaviour
         .OnComplete(() =>
         {
             physicsRaycaster.enabled = true;
-
+            Destroy(attack);
             isAttacking = false;
             lineRenderer.enabled = true;
         });

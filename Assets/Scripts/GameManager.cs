@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
-    public int currentLevelIndex = 0;
+    public GameObject currentLevel;    
     public List<GameObject> levelPrefabs;
-    public GameObject WinPanel;
+    public UnityEvent winEvent;
     public List<Boss> bosses = new List<Boss>();
 
     public static GameManager Instance { get; private set; }
@@ -23,18 +24,37 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 1;
         Random.InitState("SkibidiRizz".GetHashCode());
+        for (int i = 0; i < DataManager.gameData.playerData.currentLevelIndex; i++)  
+        {
+            Random.Range(0, 0);
+        }
     }
 
     public void NextLevel()
     {
+        bosses.Clear();
+        if (currentLevel != null)
+        {
+            Destroy(currentLevel);
+        }
         var temp = new List<GameObject>(levelPrefabs);
-        temp.RemoveAt(currentLevelIndex);
-        int levelIndex = Random.Range(0, levelPrefabs.Count);
-        GameObject levelPrefab = temp[levelIndex];
-        Instantiate(levelPrefab);
+        temp.RemoveAt(DataManager.gameData.playerData.currentLevelIndex);
+        DataManager.gameData.playerData.currentLevelIndex = Random.Range(0, temp.Count-1);
+        GameObject levelPrefab = temp[DataManager.gameData.playerData.currentLevelIndex];
+        currentLevel = Instantiate(levelPrefab, Vector3Int.zero, Quaternion.identity);
     }
 
-    public void onBossDie(Boss boss)
+    public void StartLevel(int index)
+    {
+        if (currentLevel != null)
+        {
+            Destroy(currentLevel);
+        }
+        GameObject levelPrefab = levelPrefabs[index];
+        currentLevel = Instantiate(levelPrefab, Vector3Int.zero, Quaternion.identity);
+    }
+
+    public void OnBossDie(Boss boss)
     {
         if (!bosses.Remove(boss))
         {
@@ -42,18 +62,25 @@ public class GameManager : MonoBehaviour
         }
 
         if (bosses.Count == 0)
-            {
-                Debug.Log("All bosses are dead!");
-
-            }
+        {
+            Debug.Log("All bosses are dead!");
+            Invoke("Win", 1f);
+        }
     }
 
     public void Win()
     {
         Debug.Log("You win!");
-        WinPanel.SetActive(true);
-        Time.timeScale = 0;
+        Invoke("delayWin", 1f);
     }
 
+    public void delayWin()
+    {
+        winEvent?.Invoke();
+    }
 
+    void OnApplicationQuit()
+    {
+        DataManager.Save();
+    }
 }
