@@ -19,7 +19,7 @@ public class IngameMenuController : MonoBehaviour
     public void ReturnHomeMenu()
     {
         TogglePause(false);
-        Invoke(nameof(DoReturnHomeMenu), cycleTime+0.01f);
+        DoReturnHomeMenu();
     }
 
     private void DoReturnHomeMenu()
@@ -34,14 +34,16 @@ public class IngameMenuController : MonoBehaviour
 
     public void ToggleWin(bool isShow)
     {
+        GameState.IsGameWon = isShow;
         Time.timeScale = isShow ? 0 : 1;
         ToggleBtn(winPanel, isShow, true, Ease.OutBounce);
     }
 
     public void TogglePause(bool isShow)
     {
+        if (GameState.IsGameWon) return;
         Time.timeScale = isShow ? 0 : 1;
-        ToggleBtn(pausePanel, isShow, true);
+        ToggleBtn(pausePanel, isShow, true, Ease.OutBounce);
     }
 
     public void ToggleAttackBtn(bool isShow)
@@ -76,7 +78,7 @@ public class IngameMenuController : MonoBehaviour
             });
     }
 
-    public void ToggleBtn(TweenReact btn, bool isShow, bool hasBackground)
+    public void ToggleBtn(TweenReact btn, bool isShow, bool hasBackground, Action onComplete = null)
     {
         if (isShow)
         {
@@ -99,6 +101,7 @@ public class IngameMenuController : MonoBehaviour
         {
             if (!isShow)
             {
+                onComplete?.Invoke();
                 btn.rectTransform.gameObject.SetActive(false);
                 if (hasBackground) background.gameObject.SetActive(false);
             }
@@ -106,7 +109,7 @@ public class IngameMenuController : MonoBehaviour
         });
     }
     
-    public void ToggleBtn(TweenReact btn, bool isShow, bool hasBackground, Ease ease)
+    public void ToggleBtn(TweenReact btn, bool isShow, bool hasBackground, Ease ease, Action onComplete = null)
     {
         if (isShow)
         {
@@ -129,6 +132,7 @@ public class IngameMenuController : MonoBehaviour
         {
             if (!isShow)
             {
+                onComplete?.Invoke();
                 btn.rectTransform.gameObject.SetActive(false);
                 if (hasBackground) background.gameObject.SetActive(false);
             }

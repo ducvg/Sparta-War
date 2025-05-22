@@ -1,15 +1,17 @@
 
+using System;
 using DG.Tweening;
 using UnityEngine;
 
 public class DoTweenUtility
 {
-    public static void AnimateToTransform(Transform from, Transform to, float duration)
+    public static Tween AnimateToTransform(Transform from, Transform to, float duration, Action onComplete = null)
     {
-        DOTween.Sequence()
+        return DOTween.Sequence()
             .Join(from.DOMove(to.position, duration))
             .Join(from.DORotate(to.rotation.eulerAngles, duration))
             .Join(from.DOScale(to.localScale, duration))
-            .SetEase(Ease.InOutSine);
+            .SetEase(Ease.InOutSine)
+            .OnComplete(() => onComplete?.Invoke()); // <-- Run callback when complete
     }
 }
